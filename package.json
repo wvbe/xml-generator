@@ -1,0 +1,23 @@
+{
+  "name": "xml-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "xml-generator": "bin/lorem-xml.js"
+  },
+  "dependencies": {
+    "ask-nicely": "^3.0.2",
+    "fontoxpath": "^3.8.0",
+    "fs-extra": "^8.1.0",
+    "lorem-ipsum": "^2.0.3",
+    "slimdom-sax-parser": "^1.2.1",
+    "uuid": "^3.3.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
