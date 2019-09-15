@@ -106,7 +106,7 @@ declare variable $CM_WRAPPING_INLINES as array(*) := array {
 	}
 };
 
-declare %public function dita:makeTopicrefToNewTopic ($options, $name) as node() {
+declare %public function dita:makeTopicrefToNewTopic ($parentFileName, $options, $name) as node() {
 	let $topicOptions := $options('topicOptions')
 
 	return if (generator:random-boolean(0.0825))
@@ -119,7 +119,10 @@ declare %public function dita:makeTopicrefToNewTopic ($options, $name) as node()
 				for $n in 1 to generator:random-number(2, 5) cast as xs:integer
 					return <topicref href="{
 						generator:create-document-for-node(
-							concat('topic-', $name, '-', $n, '.dita'),
+							generator:create-document-name-for-child(
+								$parentFileName,
+								concat('topic-', $name, '-', $n, '.dita')
+							),
 							dita:makeTopicNode($topicOptions)
 						)
 					}" />
@@ -128,7 +131,10 @@ declare %public function dita:makeTopicrefToNewTopic ($options, $name) as node()
 
 		else <topicref href="{
 			generator:create-document-for-node(
-				concat('topic-', $name, '.dita'),
+				generator:create-document-name-for-child(
+					$parentFileName,
+					concat('topic-', $name, '.dita')
+				),
 				dita:makeTopicNode($topicOptions)
 			)
 		}" />
@@ -152,7 +158,7 @@ declare %public function dita:makeTopicNode ($options) as node() {
 	</topic>
 };
 
-declare %public function dita:makeMapNode ($options, $mapDepth) as node() {
+declare %public function dita:makeMapNode ($parentFileName, $options, $mapDepth) as node() {
 	let $mapOptions := $options('mapOptions'),
 		$title := generator:random-phrase()
 
@@ -165,7 +171,7 @@ declare %public function dita:makeMapNode ($options, $mapDepth) as node() {
 
 		{
 			for $n in 1 to fn:round(generator:random-number($mapOptions('minimumTopics'), $mapOptions('maximumTopics'))) cast as xs:integer
-				return dita:makeTopicrefToNewTopic ($options, $n)
+				return dita:makeTopicrefToNewTopic ($parentFileName, $options, $n)
 		}
 	</map>
 };

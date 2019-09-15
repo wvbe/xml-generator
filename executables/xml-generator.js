@@ -32,9 +32,15 @@ function getXqueryModuleSpecification (location) {
 new Command()
 	.addOption('no-debug', 'd', 'Increase performance by not recording debug information for fontoxpath')
 	.addParameter(
-		new Parameter('destination').setResolver(val =>
-			path.resolve(process.cwd(), val || 'generated-xml')
-		)
+		new Parameter('destination').setResolver(val => {
+			const rootFileName = val || 'generated-xml-' + Date.now() + '.ditamap';
+
+			if (!path.extname(rootFileName)) {
+				throw new Error('The destination file must have an extension, for example "' + val + '.xml"')
+			}
+
+			return rootFileName;
+		})
 	)
 	.setController(req => {
 		const options = {
@@ -48,23 +54,24 @@ new Command()
 			topicOptions: {}
 		};
 		console.error('--- Setup phase');
-		console.error('DEST\t' + req.parameters.destination);
+		console.error('CWD\t' + process.cwd());
+		console.error('FNAME\t' + req.parameters.destination);
 		console.error('OPTS\t' + JSON.stringify(options, null, '  ').replace(/"/g, ''));
 
 		console.error('--- Loading XQuery modules');
 		const { evaluate, finish } = createXQueryContext({
 			debug: !req.options['no-debug'],
-			cwd: req.parameters.destination,
+			cwd: process.cwd(),
 			modules: AUTOLOADING_XQUERY_MODULES.map(getXqueryModuleSpecification)
 		});
 
 		console.error('--- Evaluation phase');
 		evaluate(
-			{ options },
+			{ options, outputFileName: req.parameters.destination },
 			`
 			generator:create-document-for-node(
-				'map.ditamap',
-				dita:makeMapNode ($options, 0)
+				$outputFileName,
+				dita:makeMapNode ($outputFileName, $options, 0)
 			)
 			`
 		);

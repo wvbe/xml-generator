@@ -12,6 +12,9 @@ declare %public function generator:create-document-for-node ($name as xs:string,
 declare %public function generator:random-phrase () as xs:string {
 	Q{generated_namespace_uri_generator}lorem-ipsum('sentence', 1)
 };
+declare %public function generator:create-document-name-for-child ($parentFileName as xs:string, $childBaseName as xs:string) as xs:string {
+	Q{generated_namespace_uri_generator}create-document-name-for-child($parentFileName, $childBaseName)
+};
 
 (:~ Calls the `lorem-ipsum` npm library for randomly generated text ~:)
 declare %public function generator:random-words ($length as xs:double) as xs:string {

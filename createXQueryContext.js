@@ -57,6 +57,7 @@ module.exports = function createXQueryContext ({
 
 	return {
 		evaluate: function evaluateInXQueryContext(variables, xQuery, document = new slimdom.Document()) {
+			console.dir(variables);
 			return evaluateXPath(xQuery, document, null, variables, null, {
 				language: evaluateXPath.XQUERY_3_1_LANGUAGE,
 				moduleImports,
