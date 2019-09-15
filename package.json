@@ -1,23 +1,25 @@
 {
-  "name": "xml-generator",
-  "version": "1.0.0",
-  "description": "",
-  "main": "createXQueryContext.js",
-  "bin": {
-    "xml-generator": "executables/xml-generator.js"
-  },
-  "dependencies": {
-    "ask-nicely": "^3.0.2",
-    "fontoxpath": "^3.8.0",
-    "fs-extra": "^8.1.0",
-    "lorem-ipsum": "^2.0.3",
-    "slimdom-sax-parser": "^1.2.1",
-    "uuid": "^3.3.3"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC"
+	"name": "xml-generator",
+	"version": "1.0.0",
+	"description": "",
+	"main": "createXQueryContext.js",
+	"bin": {
+		"xml-generator": "executables/xml-generator.js"
+	},
+	"dependencies": {
+		"ask-nicely": "^3.0.2",
+		"fontoxpath": "^3.9.2",
+		"fs-extra": "^8.1.0",
+		"lorem-ipsum": "^2.0.3",
+		"npmlog": "^4.1.2",
+		"slimdom": "^2.3.1"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"example": "node executables/xml-generator examples/my-custom-module.xqm examples/test.xml",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node --max-old-space-size=8192 executables/xml-generator.js xquery-modules/dita.xqm generated-xml-test.xml"
+	},
+	"author": "",
+	"license": "ISC"
 }

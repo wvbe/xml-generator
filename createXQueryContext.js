@@ -1,69 +1,76 @@
-const { slimdom } = require('slimdom-sax-parser');
+const slimdom = require('slimdom');
 const fs = require('fs-extra');
 const path = require('path');
 const { evaluateXPath, registerXQueryModule } = require('fontoxpath');
+const EventEmitter = require('events');
 
-// API layer to queue writing documents to disk
-class FilesystemProxy {
-	constructor (cwd) {
-		this.cwd = cwd;
-		this.jobs = [];
-	}
+module.exports = function createXQueryContext({
+	variables,
 
-	createDocumentForNode (id, node) {
-		const xml = slimdom.serializeToWellFormedString(node);
-		const name = path.resolve(this.cwd, id);
-		this.jobs.push([
-			'JOB\tcreate\t' + id,
-			() => fs.outputFileSync(name, xml)
-		]);
-
-		return { id, name };
-	}
-
-	executeJobs () {
-		this.jobs.forEach(([description, callback]) => {
-			console.error(description);
-			callback();
-		});
-	}
-}
-
-module.exports = function createXQueryContext ({
 	// The working directory for creating new files
 	cwd,
 
 	// A list of XQuery modules as objects:
 	//   { prefix: 'mml', url: 'http://...', contents: '(:~ XQuery here ~:)' }
-	modules,
+	modules = [],
 
 	// Track fontoxpath debug information
 	debug
 }) {
-	const fileSystemProxy = new FilesystemProxy (cwd);
+	const eventEmitter = new EventEmitter();
+	const queue = [];
+	function addToQueue(id, node) {
+		const queueItem = {
+			id,
+			name: path.resolve(cwd, id),
+			xml: slimdom.serializeToWellFormedString(node).replace(/\s+/g, ' ')
+		};
+		queue.push(queueItem);
+		eventEmitter.emit('queue', queueItem);
+		return queueItem;
+	}
 
 	// Register a custom XPath functions that talk to node modules
 	// Each of these should also have something registered in generator.xqm
-	require('./xquery-js-functions/chunking')(fileSystemProxy);
+	require('./xquery-js-functions/chunking')(addToQueue);
 	require('./xquery-js-functions/random')();
 	require('./xquery-js-functions/logging')();
 
 	// Register the XQuery modules to fontoxpath
-	const moduleImports = modules.reduce((obj, mod) => {
-		console.error(['XQM', mod.prefix, mod.url].join('\t'));
-		registerXQueryModule(mod.contents);
-		return { ...obj, [mod.prefix]: mod.url };
-	}, {});
+	const mainModule = modules.find(mod => mod.main);
+	if (!mainModule) {
+		throw new Error('A main XQuery module is required');
+	}
 
 	return {
-		evaluate: function evaluateInXQueryContext(variables, xQuery, document = new slimdom.Document()) {
-			console.dir(variables);
-			return evaluateXPath(xQuery, document, null, variables, null, {
+		evaluate: function evaluateInXQueryContext() {
+			modules
+				.filter(mod => !mod.main)
+				// @TODO dependency load order
+				// .reverse()
+				.reduce((obj, mod) => {
+					eventEmitter.emit('register-module', mod);
+					registerXQueryModule(mod.contents, { debug });
+				}, {});
+
+			eventEmitter.emit('evaluate:start');
+			evaluateXPath(mainModule.contents, new slimdom.Document(), null, variables, null, {
 				language: evaluateXPath.XQUERY_3_1_LANGUAGE,
-				moduleImports,
+				// moduleImports: libraryModules,
 				debug
 			});
+			eventEmitter.emit('evaluate:finish');
 		},
-		finish: fileSystemProxy.executeJobs.bind(fileSystemProxy)
+
+		onEvent: eventEmitter.on.bind(eventEmitter),
+
+		finish: () => {
+			eventEmitter.emit('write:start');
+			queue.forEach(queueItem => {
+				eventEmitter.emit('write:item', queueItem);
+				fs.outputFileSync(queueItem.name, queueItem.xml);
+			});
+			eventEmitter.emit('write:finish');
+		}
 	};
 };

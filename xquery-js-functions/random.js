@@ -4,7 +4,7 @@ const { registerCustomXPathFunction } = require('fontoxpath');
 const lorem = new LoremIpsum({
 	sentencesPerParagraph: {
 		max: 8,
-		min: 4
+		min: 1
 	},
 	wordsPerSentence: {
 		max: 16,
@@ -14,7 +14,10 @@ const lorem = new LoremIpsum({
 
 module.exports = () => {
 	registerCustomXPathFunction(
-		'generator:lorem-ipsum',
+		{
+			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
+			localName: 'lorem-ipsum'
+		},
 		['xs:string', 'xs:double'],
 		'xs:string',
 		(_, type, num) => {
@@ -32,16 +35,24 @@ module.exports = () => {
 			}
 		}
 	);
+
 	registerCustomXPathFunction(
-		'generator:random-number',
+		{
+			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
+			localName: 'random-number'
+		},
 		['xs:double', 'xs:double'],
 		'xs:double',
 		(_, min, max) => {
 			return Math.random() * (max - min) + min;
 		}
 	);
+
 	registerCustomXPathFunction(
-		'generator:random-boolean',
+		{
+			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
+			localName: 'random-boolean'
+		},
 		['xs:double'],
 		'xs:boolean',
 		(_, probability) => {

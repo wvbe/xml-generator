@@ -1,92 +1,82 @@
 #!/usr/bin/env node
 const path = require('path');
-const { readFileSync } = require('fs');
+const fs = require('fs');
+const log = require('npmlog');
+
 const { Command, Parameter } = require('ask-nicely');
 
 const createXQueryContext = require('../createXQueryContext');
-
-// Matches a namespace prefix and url from the module declaration
-const MATCH_MODULE_NS_FROM_STRING = /(?:\n|^)module namespace ([a-z]*) = "(.*)"/m;
-
-// Load these XQuery modules
-const AUTOLOADING_XQUERY_MODULES = [
-	// Keep "generator" in at all times, it provides the bridge from XQ to NodeJS
-	path.join(__dirname, '..', 'xquery-modules', 'generator.xqm'),
-
-	path.join(__dirname, '..', 'xquery-modules', 'dita.xqm')
-]
-
-// Reads (XQuery module) files from disk and extracts the namespace information required to register
-// with fontoxpath.
-function getXqueryModuleSpecification (location) {
-	const contents = readFileSync(location, 'utf8');
-	const namespaceInfo = MATCH_MODULE_NS_FROM_STRING.exec(contents);
-
-	if (!namespaceInfo) {
-		throw new Error('Could not extract namespace info from XQuery module\n' + location);
-	}
-	const [_match, prefix, url]  = namespaceInfo;
-	return { prefix, url, contents };
-};
+const createXQueryModules = require('../createXQueryModules');
 
 new Command()
-	.addOption('no-debug', 'd', 'Increase performance by not recording debug information for fontoxpath')
+
+	.addParameter(
+		new Parameter('main').setResolver(input => {
+			if (!input) {
+				return [];
+			}
+			const location = path.resolve(process.cwd(), input);
+			if (!fs.existsSync(location)) {
+				throw new Error(`Script "${input}" could not be found.${location}`);
+			}
+
+			return createXQueryModules(location, true);
+		})
+	)
 	.addParameter(
 		new Parameter('destination').setResolver(val => {
-			const rootFileName = val || 'generated-xml-' + Date.now() + '.ditamap';
+			const rootFileName = val || 'generated-xml-' + Date.now() + '.xml';
 
 			if (!path.extname(rootFileName)) {
-				throw new Error('The destination file must have an extension, for example "' + val + '.xml"')
+				throw new Error(
+					'The destination file must have an extension, for example "' + val + '.xml"'
+				);
 			}
 
 			return rootFileName;
 		})
 	)
+	.addOption(
+		'no-debug',
+		'd',
+		'Increase performance by not recording debug information for fontoxpath'
+	)
 	.setController(req => {
-		const options = {
-			mapOptions: {
-				minimumTopics: 500,
-				maximumTopics: 500,
-				minimumMaps: 0,
-				maximumMaps: 0,
-				maximumMapDepth: 0
-			},
-			topicOptions: {}
-		};
-		console.error('--- Setup phase');
-		console.error('CWD\t' + process.cwd());
-		console.error('FNAME\t' + req.parameters.destination);
-		console.error('OPTS\t' + JSON.stringify(options, null, '  ').replace(/"/g, ''));
-
-		console.error('--- Loading XQuery modules');
-		const { evaluate, finish } = createXQueryContext({
+		const { onEvent, evaluate, finish } = createXQueryContext({
 			debug: !req.options['no-debug'],
 			cwd: process.cwd(),
-			modules: AUTOLOADING_XQUERY_MODULES.map(getXqueryModuleSpecification)
+			modules: req.parameters.main,
+			variables: {
+				workingDirectory: process.cwd(),
+				destination: req.parameters.destination
+			}
 		});
 
-		console.error('--- Evaluation phase');
-		evaluate(
-			{ options, outputFileName: req.parameters.destination },
-			`
-			generator:create-document-for-node(
-				$outputFileName,
-				dita:makeMapNode ($outputFileName, $options, 0)
-			)
-			`
-		);
+		onEvent('register-module', mod => {
+			const message = [`Register module "${mod.prefix}" (${mod.url})`];
+			mod.stubbed && message.push('\tNot found, stubbing');
+			mod.dependencies.forEach(dep => message.push('\tDepends on: ' + dep));
+			log.info('setup', message.join('\n'));
+		});
 
-		console.error('--- Write phase');
+		onEvent('evaluate:start', () => log.info('eval', `Starting evaluation`));
+
+		onEvent('evaluate:finish', () => log.info('eval', `Finished evaluation`));
+
+		onEvent('write:start', () => log.info('disk', `Starting disk output`));
+
+		onEvent('write:item', queueItem => log.info('disk', `Write "${queueItem.name}"`));
+
+		onEvent('write:finish', () => log.info('disk', `Finished disk output`));
+
+		onEvent('queue', queuedItem => log.info('queue', `Queue new file "${queuedItem.id}"`));
+
+		evaluate();
+
 		finish();
-
-		console.error('--- Done');
 	})
 	.execute(process.argv.slice(2))
 	.catch(error => {
-		console.error('');
-		console.error('-- A fatal error occurred:');
-		console.error(error.stack);
-		console.error('');
-		console.error('Killing the process with fire')
+		log.error('fatal', error.stack || error);
 		process.exit(1);
 	});
