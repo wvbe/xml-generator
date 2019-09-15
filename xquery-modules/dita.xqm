@@ -53,51 +53,54 @@ declare function dita:createRandomLongQuote () as node()* {
 declare variable $CM_BODY_BLOCKS as array(*) := array {
 	map {
 		'weight': 3,
-		'callback': function () { dita:createRandomParagraph() }
+		'create': function () { dita:createRandomParagraph() }
 	},
 	map {
 		'weight': 1,
-		'callback': function () { dita:createRandomNote() }
+		'create': function () { dita:createRandomNote() }
 	},
 	map {
 		'weight': 0.25,
-		'callback': function () { dita:createRandomOrderedList() }
+		'create': function () { dita:createRandomOrderedList() }
 	},
-
 	map {
 		'weight': 0.25,
-		'callback': function () { dita:createRandomUnorderedList() }
+		'create': function () { dita:createRandomUnorderedList() }
+	},
+	map {
+		'weight': 0.1,
+		'create': function () { dita:createRandomLongQuote() }
 	}
 };
 
 declare variable $CM_WRAPPING_INLINES as array(*) := array {
 	map {
 		'weight': 0.5,
-		'callback': function ($wrapped) {
+		'create': function ($wrapped) {
 			<b>{ $wrapped }</b>
 		}
 	},
 	map {
 		'weight': 0.5,
-		'callback': function ($wrapped) {
+		'create': function ($wrapped) {
 			<i>{ $wrapped }</i>
 		}
 	},
 	map {
 		'weight': 0.05,
-		'callback': function ($wrapped) {
+		'create': function ($wrapped) {
 			<u>{ $wrapped }</u>
 		}
 	},
 	map {
 		'weight': 0.5,
-		'callback': function ($wrapped) {
+		'create': function ($wrapped) {
 			<xref href="http://dummy" scope="external">{ $wrapped }</xref>
 		}
 	},
 	map {
 		'weight': 0.5,
-		'callback': function ($wrapped) {
+		'create': function ($wrapped) {
 			<codeph>{ $wrapped }</codeph>
 		}
 	}
@@ -106,7 +109,7 @@ declare variable $CM_WRAPPING_INLINES as array(*) := array {
 declare %public function dita:makeTopicrefToNewTopic ($options, $name) as node() {
 	let $topicOptions := $options('topicOptions')
 
-	return if (generator:random-boolean(0.08))
+	return if (generator:random-boolean(0.0825))
 
 		then <topichead>
 			<topicmeta>

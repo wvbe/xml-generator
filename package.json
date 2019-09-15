@@ -2,9 +2,9 @@
   "name": "xml-generator",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "createXQueryContext.js",
   "bin": {
-    "xml-generator": "bin/lorem-xml.js"
+    "xml-generator": "executables/xml-generator.js"
   },
   "dependencies": {
     "ask-nicely": "^3.0.2",

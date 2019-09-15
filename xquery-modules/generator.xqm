@@ -48,15 +48,19 @@ declare %public function generator:random-boolean ($probability as xs:double) as
 	```
 	map {
 		'probability': xs:double,
-		'callback': function () as node()*
+		'create': function () as node()*
 	}
 	```
  ~:)
 
-declare %public function generator:random-content ($contentModels as array(*), $wrappedItems as item()*) as node()* {
+
+declare %public function generator:random-content ($contentModels as array(*)) as node()* {
+	generator:random-content($contentModels, ())
+};
+
+declare %public function generator:random-content ($contentModels as array(*), $callbackArg as item()*) as node()* {
 	(:~ Using the array:flatten'ed copy from now on avoids the atomization problem ~:)
 	let $flattenedContentModels := array:flatten($contentModels)
-
 
 	let $totalWeight := fn:fold-left($flattenedContentModels, 0, function ($total, $item) {
 		$item('weight') + $total
@@ -90,12 +94,9 @@ declare %public function generator:random-content ($contentModels as array(*), $
 	return if (fn:empty($contentModel('result'))) then
 		()
 	else
-		let $callback := $contentModel('result')('callback')
+		let $callback := $contentModel('result')('create')
 		let $callbackArity := fn:function-arity($callback)
 		return if ($callbackArity = 0)
 			then $callback()
-			else $callback($wrappedItems)
-};
-declare %public function generator:random-content ($contentModels as array(*)) as node()* {
-	generator:random-content($contentModels, ())
+			else $callback($callbackArg)
 };
