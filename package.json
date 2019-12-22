@@ -2,9 +2,8 @@
 	"name": "xml-generator",
 	"version": "1.0.0",
 	"description": "",
-	"main": "createXQueryContext.js",
 	"bin": {
-		"xml-generator": "executables/xml-generator.js"
+		"xml-generator": "generator.js"
 	},
 	"dependencies": {
 		"ask-nicely": "^3.0.2",
@@ -16,9 +15,10 @@
 	},
 	"devDependencies": {},
 	"scripts": {
-		"example": "node executables/xml-generator examples/my-custom-module.xqm examples/test.xml",
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "node --max-old-space-size=8192 executables/xml-generator.js xquery-modules/dita.xqm generated-xml-test.xml"
+		"jats": "node generator examples/generate-jats.xqm generated/jats.xml",
+		"dita-topic": "node generator examples/generate-dita-topic.xqm generated/dita-topic.xml",
+		"dita-map": "node generator examples/generate-dita-map.xqm generated/dita-map.xml",
+		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "",
 	"license": "ISC"

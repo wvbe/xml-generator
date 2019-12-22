@@ -1,8 +1,6 @@
 module namespace dita = "https://github.com/wvbe/xml-generator/ns/dita";
 
-import module namespace generator = "https://github.com/wvbe/xml-generator/ns" at "./generator.xqm";
-
-declare variable $skeetbrrrp external;
+import module namespace generator = "https://github.com/wvbe/xml-generator/ns";
 
 declare variable $CM_LIST_ITEMS_MIN := 3;
 declare variable $CM_LIST_ITEMS_MAX := 9;

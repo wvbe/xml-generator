@@ -27,14 +27,12 @@ module.exports = function createXQueryContext({
 		};
 		queue.push(queueItem);
 		eventEmitter.emit('queue', queueItem);
-		return queueItem;
+		return queueItem.id;
 	}
 
 	// Register a custom XPath functions that talk to node modules
 	// Each of these should also have something registered in generator.xqm
-	require('./xquery-js-functions/chunking')(addToQueue);
-	require('./xquery-js-functions/random')();
-	require('./xquery-js-functions/logging')();
+	require('./createXQueryNodeBindings')(addToQueue);
 
 	// Register the XQuery modules to fontoxpath
 	const mainModule = modules.find(mod => mod.main);
@@ -48,18 +46,18 @@ module.exports = function createXQueryContext({
 				.filter(mod => !mod.main)
 				// @TODO dependency load order
 				// .reverse()
-				.reduce((obj, mod) => {
+				.forEach(mod => {
 					eventEmitter.emit('register-module', mod);
-					registerXQueryModule(mod.contents, { debug });
+					registerXQueryModule(!mod.unresolved ? mod.contents :  `module namespace ${mod.prefix} = "${mod.url}";`, { debug });
 				}, {});
 
 			eventEmitter.emit('evaluate:start');
-			evaluateXPath(mainModule.contents, new slimdom.Document(), null, variables, null, {
+			const result = evaluateXPath(mainModule.contents, new slimdom.Document(), null, variables, null, {
 				language: evaluateXPath.XQUERY_3_1_LANGUAGE,
 				// moduleImports: libraryModules,
 				debug
 			});
-			eventEmitter.emit('evaluate:finish');
+			eventEmitter.emit('evaluate:finish', result);
 		},
 
 		onEvent: eventEmitter.on.bind(eventEmitter),

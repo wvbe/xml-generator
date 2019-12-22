@@ -6,9 +6,13 @@ const MATCH_MODULE_NS_FROM_STRING = /(?:\n|^)module namespace ([a-z]*) = "(.*)"/
 
 const LOCATION_BY_NAMESPACE_URL = {
 	'https://github.com/wvbe/xml-generator/ns': path.resolve(
-		__dirname,
-		'xquery-modules',
-		'generator.xqm'
+		__dirname, '..', 'generator.xql'
+	),
+	'https://github.com/wvbe/xml-generator/ns/dita': path.resolve(
+		__dirname, '..', 'examples','xquery-libraries','dita.xql'
+	),
+	'https://github.com/wvbe/xml-generator/ns/jats': path.resolve(
+		__dirname, '..', 'examples','xquery-libraries','jats.xql'
 	)
 };
 
@@ -30,36 +34,39 @@ function getUnsortedModuleDependencyList(location, asMainModule) {
 		const [_occurrence, prefix, url, importedLocation] = match;
 		dependencies.push(url);
 
-		if (importedLocation) {
+		// @TODO guard against circular dependencies?
+
+		if (LOCATION_BY_NAMESPACE_URL[url]) {
+			modules = modules.concat(
+				getUnsortedModuleDependencyList(LOCATION_BY_NAMESPACE_URL[url])
+			);
+		} else if (importedLocation) {
 			modules = modules.concat(
 				getUnsortedModuleDependencyList(
 					path.resolve(path.dirname(location), importedLocation)
 				)
 			);
-		} else if (LOCATION_BY_NAMESPACE_URL[url]) {
-			modules = modules.concat(
-				getUnsortedModuleDependencyList(LOCATION_BY_NAMESPACE_URL[url])
-			);
 		} else {
 			modules.push({
-				prefix,
-				url,
-				contents: `module namespace ${prefix} = "${url}";`,
+				contents,
+				dependencies: [],
+				location: null,
 				main: false,
-				stubbed: true,
-				dependencies: []
+				prefix,
+				unresolved: true,
+				url
 			});
 		}
 	}
 
 	modules.push({
-		location,
-		prefix,
-		url,
 		contents,
 		dependencies,
+		location,
 		main: !!asMainModule,
-		stubbed: false
+		prefix,
+		unresolved: false,
+		url
 	});
 
 	return modules.filter((mod, i, all) => all.findIndex(m => m.url === mod.url) === i);

@@ -1,6 +1,7 @@
+import module namespace dita = "https://github.com/wvbe/xml-generator/ns/dita";
 import module namespace generator = "https://github.com/wvbe/xml-generator/ns";
 
-import module namespace dita = "https://github.com/wvbe/xml-generator/ns/dita" at "../xquery-modules/dita.xqm";
+declare variable $destination external;
 
 generator:create-document-for-node(
 	$destination,

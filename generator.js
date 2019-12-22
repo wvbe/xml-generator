@@ -5,31 +5,34 @@ const log = require('npmlog');
 
 const { Command, Parameter } = require('ask-nicely');
 
-const createXQueryContext = require('../createXQueryContext');
-const createXQueryModules = require('../createXQueryModules');
+const createXQueryContext = require('./src/createXQueryContext');
+const createXQueryModules = require('./src/createXQueryModules');
 
 new Command()
 
 	.addParameter(
 		new Parameter('main').setResolver(input => {
 			if (!input) {
-				return [];
-			}
-			const location = path.resolve(process.cwd(), input);
-			if (!fs.existsSync(location)) {
-				throw new Error(`Script "${input}" could not be found.${location}`);
+				throw new Error('The first parameter must point to your XQuery main module file');
 			}
 
-			return createXQueryModules(location, true);
+			const location = path.resolve(process.cwd(), input);
+			if (!fs.existsSync(location)) {
+				throw new Error(`Script "${input}" could not be found.`);
+			}
+
+			return location;
 		})
 	)
 	.addParameter(
-		new Parameter('destination').setResolver(val => {
-			const rootFileName = val || 'generated-xml-' + Date.now() + '.xml';
+		new Parameter('destination').setResolver(rootFileName => {
+			if (!rootFileName) {
+				throw new Error('The second parameter must be the $destination file');
+			}
 
 			if (!path.extname(rootFileName)) {
 				throw new Error(
-					'The destination file must have an extension, for example "' + val + '.xml"'
+					'The destination file must have an extension, for example "' + rootFileName + '.xml"'
 				);
 			}
 
@@ -45,7 +48,7 @@ new Command()
 		const { onEvent, evaluate, finish } = createXQueryContext({
 			debug: !req.options['no-debug'],
 			cwd: process.cwd(),
-			modules: req.parameters.main,
+			modules: createXQueryModules(req.parameters.main),
 			variables: {
 				workingDirectory: process.cwd(),
 				destination: req.parameters.destination
@@ -53,30 +56,32 @@ new Command()
 		});
 
 		onEvent('register-module', mod => {
-			const message = [`Register module "${mod.prefix}" (${mod.url})`];
-			mod.stubbed && message.push('\tNot found, stubbing');
-			mod.dependencies.forEach(dep => message.push('\tDepends on: ' + dep));
-			log.info('setup', message.join('\n'));
+			log.info('setup', `Register module "${mod.prefix}" (${mod.url})`);
+			mod.unresolved && log.warn('setup', '\tLibrary module not resolved');
+			mod.dependencies.forEach(dep => log.info('setup', '\tDepends on: ' + dep));
 		});
 
 		onEvent('evaluate:start', () => log.info('eval', `Starting evaluation`));
 
-		onEvent('evaluate:finish', () => log.info('eval', `Finished evaluation`));
+		onEvent('evaluate:finish', (result) => log.info('eval', `Finished evaluation`) || log.info('result', result));
 
 		onEvent('write:start', () => log.info('disk', `Starting disk output`));
 
-		onEvent('write:item', queueItem => log.info('disk', `Write "${queueItem.name}"`));
+		onEvent('write:item', queueItem => log.verbose('disk', `Write "${queueItem.name}"`));
 
 		onEvent('write:finish', () => log.info('disk', `Finished disk output`));
 
-		onEvent('queue', queuedItem => log.info('queue', `Queue new file "${queuedItem.id}"`));
+		onEvent('queue', queuedItem => log.verbose('queue', `Queue new file "${queuedItem.id}"`));
 
 		evaluate();
 
 		finish();
 	})
+
 	.execute(process.argv.slice(2))
+
 	.catch(error => {
 		log.error('fatal', error.stack || error);
-		process.exit(1);
+
+		process.exitCode = 1;
 	});

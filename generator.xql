@@ -2,11 +2,38 @@ module namespace generator = "https://github.com/wvbe/xml-generator/ns";
 
 import module namespace array = "http://www.w3.org/2005/xpath-functions/array";
 
-(:~
-	Synchronously queues a new XML document to be written to disk and returns the name of that file
-	TODO Clarity and tests on how that file name relates to the cwd and current document
-~:)
-declare %public function generator:create-document-for-node ($name as xs:string, $node as node()) as xs:string external;
+(:~ Saves a well-formed document for the given node to disk ~:)
+declare %public function generator:create-document-for-node (
+	$name as xs:string,
+	$node as node()
+) as xs:string external;
+
+(:~ Documents hierarchy is also a file/folder hierarchy ~:)
+declare function generator:create-document-name-for-child (
+	$parentFileName as xs:string,
+	$childBaseName as xs:string
+) as xs:string external;
+
+(:~ Write something to console ~:)
+declare function generator:log (
+	$message as item()*
+) as xs:boolean external;
+
+declare %private function generator:lorem-ipsum (
+	$type as xs:string,
+	$num as xs:double
+) as xs:string external;
+
+(:~ Chance to return TRUE is $probability ~:)
+declare function generator:random-boolean (
+	$probability as xs:double
+) as xs:boolean external;
+
+(:~ Return a number between $min and $max ~:)
+declare function generator:random-number (
+	$min as xs:double,
+	$max as xs:double
+) as xs:double external;
 
 (:~ Calls the `lorem-ipsum` npm library for randomly generated text ~:)
 declare %public function generator:random-phrase () as xs:string {

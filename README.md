@@ -1,11 +1,13 @@
-A NodeJS based XQuery tool that generates XML documents. Those documents are dummy data for
-testing one software or another (I work for [FontoXML](https://fontoxml.com)).
+Generate a bunch of lorem-ipsum XML documents for testing one software or another. Uses XQuery modules and provides a
+library for interacting with `fs` and `lorem-ipsum`.
 
-# Features
+# Out of te box
 
--   A bunch of XPath/XQuery functions that let you generate randomized data of various types.
--   The ability to load your own XQuery modules that define even more of those functions.
--   Save the outcome of this stuff to one or more XML files.
+-   Command line interface
+-   Imports XQuey main module and dependencies
+
+```
+$
 
 The tool contains a configuration for DITA 1.3 content. If no additional parameters are used, these XQuery modules and
 that expression is used, and results in a DITA map with approximately 50 topics.
