@@ -4,7 +4,7 @@ import module namespace array = "http://www.w3.org/2005/xpath-functions/array";
 
 (:~ Saves a well-formed document for the given node to disk ~:)
 declare %public function generator:create-document-for-node (
-	$name as xs:string,
+	$fileName as xs:string,
 	$node as node()
 ) as xs:string external;
 

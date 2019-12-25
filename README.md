@@ -1,70 +1,113 @@
+# XML generator
+
 Generate a bunch of lorem-ipsum XML documents for testing one software or another. Uses XQuery modules and provides a
 library for interacting with `fs` and `lorem-ipsum`.
 
-# Out of te box
+## Step 1: Have an XQuery module
 
--   Command line interface
--   Imports XQuey main module and dependencies
+Write one for whichever XML structure you want to generate. You can import and use the
+`https://github.com/wvbe/xml-generator/ns` namespace for functions to generate randomized data as well as writing stuff
+to disk.
 
-```
-$
-
-The tool contains a configuration for DITA 1.3 content. If no additional parameters are used, these XQuery modules and
-that expression is used, and results in a DITA map with approximately 50 topics.
-
-# Usage
-
-Can be used without installing `xml-generator` if you run `npx wvbe/xml-generator` instead.
-
-```sh
-# Use all the default settings
-xml-generator output.xml --expression "<test foo='bar' />"
-```
-
-```sh
-# Generate an extremely simple, not so random XML
-xml-generator output.xml --expression "<test foo='bar' />"
-```
-
-```sh
-# Generate one random DITA topic (using the built-in DITA modules)
-xml-generator output.dita -x "dita:random-topic()"
-```
-
-```sh
-# Generate XML based on whatever you have in your own XQuery module
-xml-generator output.xml -x "my:custom-function()" --modules my-custom-module.xqm
-
-# See also "Customization"
-```
-
-# Customization
-
-Generating random XML is not fun if you can't do it for the schema that you need. For this reason, the `--expression`
-flag lets you decide for yourself what the output is gonna be, and the `--modules` option lets you import more XQuery
-modules with XPath/XQuery definitions.
-
-For example, a custom XQuery module could contain:
+For example, `my-module.xqm`:
 
 ```xquery
-module namespace my = "https://my/module/namespace/uri";
-
 import module namespace generator = "https://github.com/wvbe/xml-generator/ns";
 
-declare %public function my:custom-function () as node() {
-	<recipe xmlns="http://my/schema/namespace/uri">
-		<ingredients>
-			{
-				for $index in 1 to fn:round(generator:random-number(5, 10)) cast as xs:integer
-					return <ingredient>{generator:random-words(1)}</ingredient>
-			}
-		</ingredients>
-		<steps>
-			{
-				for $index in 1 to fn:round(generator:random-number(2, 5)) cast as xs:integer
-					return <step>{generator:random-paragraph()}</step>
-			}
-		</steps>
-	</recipe>
-};
+generator:create-document-for-node(
+	$destination,
+	<nerf>
+		<title>Random XML test</title>
+		<p>{generator:random-phrase()}</p>
+	</nerf>
+)
 ```
+
+Feel free to also import other XQuery (library) modules:
+
+```xquery
+import module namespace nerf = "https://nerf.nerf/ns" at "./nerf.xql";
+```
+
+## Step 2: Run via command line
+
+```sh
+xml-generator my-module.xqm my-xml.xml
+```
+
+# Examples
+
+Everything in `examples/` is exemplary. It's a good demonstration of how to generate a realistic set of data: DITA maps,
+topics, and JATS articles.
+
+# Generator XQuery library
+
+The following functions become available from the `generator` module if you import it as shown above:
+
+```xquery
+declare function generator:create-document-for-node (
+	$fileName as xs:string,
+	$node as node()
+) as xs:string;
+
+declare function generator:create-document-name-for-child (
+	$parentFileName as xs:string,
+	$childBaseName as xs:string
+) as xs:string;
+
+declare function generator:log (
+	$message as item()*
+) as xs:boolean;
+
+declare function generator:random-boolean (
+	$probability as xs:double
+) as xs:boolean;
+
+declare function generator:random-number (
+	$min as xs:double,
+	$max as xs:double
+) as xs:double;
+
+declare function generator:random-phrase () as xs:string;
+
+declare function generator:random-words (
+	$length as xs:double
+) as xs:string;
+
+declare function generator:random-paragraph () as xs:string;
+
+declare function generator:random-controlled-value (
+	$options as item()*
+) as item()*;
+
+declare function generator:random-mixed-content (
+	$sentence as xs:string,
+	$contentModels as array(*)
+) as item()*;
+
+declare function generator:random-content (
+	$contentModels as array(*)
+) as item()*;
+
+declare function generator:random-content (
+	$contentModels as array(*),
+	$callbackArg as item()*
+) as item()*;
+```
+
+# License
+
+Copyright (c) 2019 Wybe Minnebo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+**THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.**
