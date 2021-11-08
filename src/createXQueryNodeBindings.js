@@ -1,6 +1,7 @@
 const { LoremIpsum } = require('lorem-ipsum');
 const { registerCustomXPathFunction } = require('fontoxpath');
 const { posix: path } = require('path').posix;
+const { v4: uuidv4 } = require('uuid');
 
 const lorem = new LoremIpsum({
 	sentencesPerParagraph: {
@@ -19,7 +20,7 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'create-document-for-node'
 		},
-		[ 'xs:string', 'node()' ],
+		['xs:string', 'node()'],
 		'xs:string',
 		(_, fileId, documentNode) => addToQueue(fileId, documentNode)
 	);
@@ -29,12 +30,15 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'create-document-name-for-child'
 		},
-		[ 'xs:string', 'xs:string' ],
+		['xs:string', 'xs:string'],
 		'xs:string',
 		(_, parentFileName, childBaseName) =>
 			path
 				.join(
-					parentFileName.substr(0, parentFileName.length - path.extname(parentFileName).length),
+					parentFileName.substr(
+						0,
+						parentFileName.length - path.extname(parentFileName).length
+					),
 					childBaseName
 				)
 				.replace(/\\/g, '/')
@@ -45,7 +49,7 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'log'
 		},
-		[ 'item()*' ],
+		['item()*'],
 		'xs:boolean',
 		(_, args) => {
 			console.group('generator:log');
@@ -64,7 +68,7 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'lorem-ipsum'
 		},
-		[ 'xs:string', 'xs:double' ],
+		['xs:string', 'xs:double'],
 		'xs:string',
 		(_, type, num) => {
 			switch (type) {
@@ -88,7 +92,7 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'random-boolean'
 		},
-		[ 'xs:double' ],
+		['xs:double'],
 		'xs:boolean',
 		(_, probability) => Math.random() <= probability
 	);
@@ -98,8 +102,18 @@ module.exports = (addToQueue) => {
 			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
 			localName: 'random-number'
 		},
-		[ 'xs:double', 'xs:double' ],
+		['xs:double', 'xs:double'],
 		'xs:double',
 		(_, min, max) => Math.random() * (max - min) + min
+	);
+
+	registerCustomXPathFunction(
+		{
+			namespaceURI: 'https://github.com/wvbe/xml-generator/ns',
+			localName: 'random-identifier'
+		},
+		[],
+		'xs:string',
+		(_) => uuidv4()
 	);
 };

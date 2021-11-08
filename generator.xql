@@ -35,6 +35,9 @@ declare function generator:random-number (
 	$max as xs:double
 ) as xs:double external;
 
+(:~ Return a UUID v4 ~:)
+declare function generator:random-identifier () as xs:string external;
+
 (:~ Calls the `lorem-ipsum` npm library for randomly generated text ~:)
 declare %public function generator:random-phrase () as xs:string {
 	generator:lorem-ipsum('sentence', 1)
